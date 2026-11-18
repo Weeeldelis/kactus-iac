@@ -7,3 +7,4 @@ resources:
   - configmap.yaml
   - mysql.yaml
   - wordpress.yaml
+  - networkpolicy.yaml

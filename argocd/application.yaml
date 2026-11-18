@@ -14,5 +14,5 @@ spec:
     namespace: kactus-tb
   syncPolicy:
     automated:
-      selfHeal: false   # exigence de la DSI : pas d'auto-correction
-      prune: false
+      selfHeal: true    # D5 : active apres epreuve 1
+      prune: true

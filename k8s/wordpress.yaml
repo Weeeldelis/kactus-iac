@@ -43,7 +43,7 @@ spec:
     spec:
       containers:
         - name: wordpress
-          image: docker.io/kakctus/kactus-web:tb2
+          image: docker.io/kakctus/kactus-web:tb1
           ports:
             - containerPort: 80
           env:

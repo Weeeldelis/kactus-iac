@@ -1,0 +1,59 @@
+# Service : adresse fixe "mysql" pour joindre la base
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: kactus-tb
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+---
+# StatefulSet : 1 seule base, avec son propre disque (decision D3)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: kactus-tb
+spec:
+  serviceName: mysql
+  replicas: 1
+  revisionHistoryLimit: 7
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef: {name: kactus-config, key: DB_NAME}
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef: {name: kactus-config, key: DB_USER}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: kactus-db, key: db-password}
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: kactus-db, key: root-password}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 5Gi

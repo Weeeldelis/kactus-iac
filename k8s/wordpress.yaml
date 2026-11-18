@@ -1,0 +1,68 @@
+# Service : adresse fixe + acces depuis l'exterieur (NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  namespace: kactus-tb
+spec:
+  type: NodePort
+  selector:
+    app: wordpress
+  ports:
+    - port: 80
+      nodePort: 30080
+---
+# Disque partage par les 2 copies (fichiers WordPress, images envoyees)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-data
+  namespace: kactus-tb
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Deployment : 2 copies du site, image versionnee
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  namespace: kactus-tb
+spec:
+  replicas: 2
+  revisionHistoryLimit: 7
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - name: wordpress
+          image: docker.io/kakctus/kactus-web:tb1
+          ports:
+            - containerPort: 80
+          env:
+            - name: WORDPRESS_DB_HOST
+              valueFrom:
+                configMapKeyRef: {name: kactus-config, key: DB_HOST}
+            - name: WORDPRESS_DB_NAME
+              valueFrom:
+                configMapKeyRef: {name: kactus-config, key: DB_NAME}
+            - name: WORDPRESS_DB_USER
+              valueFrom:
+                configMapKeyRef: {name: kactus-config, key: DB_USER}
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: kactus-db, key: db-password}
+          volumeMounts:
+            - name: html
+              mountPath: /var/www/html
+      volumes:
+        - name: html
+          persistentVolumeClaim:
+            claimName: wordpress-data
